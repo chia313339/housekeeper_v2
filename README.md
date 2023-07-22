@@ -1,2 +1,2 @@
 # housekeeper_v2
-create by vue3 and vite
+記帳程式第二版，此為練習用
