@@ -33,7 +33,7 @@
                     </el-form-item>
 
                     <el-form-item>
-                        <el-button class="w-[250px]" round type="primary" @click="onSubmit">登入</el-button>
+                        <el-button class="w-[250px]" round type="primary" @click="onSubmit" :loading="loading">登入</el-button>
                     </el-form-item>
                     
                 </el-form>
@@ -70,8 +70,17 @@
 </style>
 
 <script setup>
-    import { ref, reactive } from 'vue'
-    import { login } from '~/api/manager'
+    import { ref,reactive } from 'vue'
+    import { toast } from '~/composables/util'
+    import { useRouter } from 'vue-router'
+    import { useStore } from 'vuex'
+    import { login, getinfo } from '~/api/manager'
+    import { setToken } from '~/composables/auth'
+
+
+    const router = useRouter()
+    const store = useStore()
+
     const form = reactive({
         username: '',
         password: '',
@@ -94,23 +103,43 @@
         ]
     }
 
+    // 驗證輸入內容的參數
     const formRef = ref(null)
+    // 避免重複一直點登入，導致API異常
+    const loading = ref(false)
 
+    // 登入後的動作
     const onSubmit = () => {
+        // 進行輸入內容驗證
         formRef.value.validate((valid)=>{
             if(!valid){
                 return false
             }
+            // 驗證通過、請求之前loading為ture，避免重複請求
+            loading.value = true
             login(form.username, form.password)
             .then(res=>{
-                console.log(res);
+                // console.log(res);
+
+                // notification login
+                toast("登入成功", "success")
+
+                // save token
+                setToken(res.token)
+
+                // get user info
+                getinfo().then(res2=>{
+                    store.commit("SET_USERINFO",res2)
+                    console.log(res2);
+                })
+
+                // jump to index
+                router.push('/')
             })
-            .catch(err=>{
-                console.log(err);
+            .finally(()=>{
+                loading.value = false
             })
-            console.log('通過驗證!')
         })
-        console.log('submit!')
     }
 
 
